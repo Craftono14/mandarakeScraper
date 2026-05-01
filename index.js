@@ -15,7 +15,8 @@ console.log('[STARTUP] Modules loaded');
 const LISTING_URL = 'https://order.mandarake.co.jp/order/listPage/list?categoryCode=1002';
 const PUSHOVER_URL = 'https://order.mandarake.co.jp/order/listPage/list?categoryCode=1002&lang=en';
 const STORAGE_FILE = path.join(__dirname, 'last_listing.json');
-const CHECK_INTERVAL_MS = 60 * 1000; // 1 minute
+const CHECK_INTERVAL_MIN_MS = 46 * 1000;
+const CHECK_INTERVAL_MAX_MS = 90 * 1000;
 const USE_LOCAL_HTML = process.env.USE_LOCAL_HTML === 'true'; // For testing
 const SHOW_BROWSER = process.env.SHOW_BROWSER === 'true'; // Visual debug mode
 const MANUAL_LIVE_MODE = process.env.MANUAL_LIVE_MODE === 'true'; // Let user navigate live browser manually
@@ -287,10 +288,24 @@ async function checkOnce() {
   }
 }
 
-// Run immediately once, then every minute
+function getNextCheckDelayMs() {
+  return Math.floor(
+    CHECK_INTERVAL_MIN_MS + Math.random() * (CHECK_INTERVAL_MAX_MS - CHECK_INTERVAL_MIN_MS)
+  );
+}
+
+async function runCheckLoop() {
+  await checkOnce();
+
+  const nextDelay = getNextCheckDelayMs();
+  console.log(`[SCHEDULE] Next check in ${Math.round(nextDelay / 1000)}s`);
+  setTimeout(runCheckLoop, nextDelay);
+}
+
+// Run immediately once, then at a random interval between 46 and 90 seconds
 (async () => {
   try {
-    console.log('[STARTUP] Starting Mandarake scraper — checking every 60s');
+    console.log('[STARTUP] Starting Mandarake scraper — checking every 46-90s');
     
     // Graceful shutdown
     process.on('SIGINT', async () => {
@@ -300,8 +315,7 @@ async function checkOnce() {
       process.exit(0);
     });
     
-    await checkOnce();
-    setInterval(checkOnce, CHECK_INTERVAL_MS);
+    await runCheckLoop();
   } catch (err) {
     console.error('[STARTUP ERROR] Uncaught error:', err);
     process.exit(1);
