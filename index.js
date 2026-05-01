@@ -22,6 +22,7 @@ const MANUAL_LIVE_MODE = process.env.MANUAL_LIVE_MODE === 'true'; // Let user na
 const VISUAL_PAUSE_MS = Number(process.env.VISUAL_PAUSE_MS || 8000);
 const MANUAL_WAIT_MS = Number(process.env.MANUAL_WAIT_MS || 300000);
 const BROWSER_PROFILE_DIR = path.join(__dirname, '.chrome-profile');
+const CHROMIUM_PATH = process.env.CHROMIUM_PATH || '/usr/bin/chromium';
 
 const PUSHOVER_USER = process.env.PUSHOVER_USER;
 const PUSHOVER_TOKEN = process.env.PUSHOVER_TOKEN;
@@ -43,8 +44,10 @@ async function initBrowser() {
   if (!browser) {
     console.log('[BROWSER] Launching browser with stealth mode...');
     console.log('[BROWSER] Visible window:', SHOW_BROWSER);
+    console.log('[BROWSER] Chromium path:', CHROMIUM_PATH);
     browser = await puppeteer.launch({ 
       headless: SHOW_BROWSER ? false : 'new',
+      executablePath: CHROMIUM_PATH,
       userDataDir: BROWSER_PROFILE_DIR,
       args: [
         '--no-sandbox', 
